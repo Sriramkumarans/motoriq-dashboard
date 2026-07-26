@@ -156,35 +156,45 @@ function healthFrom(score: number): Health {
 
 let store: Motor[] = seed.map((m) => ({ ...m }));
 let listeners = new Set<() => void>();
+const API ="https://oa8s63r1ta.execute-api.ap-south-1.amazonaws.com/prod/motor-data";
 
-function tick() {
-  store = store.map((m) => {
-    const drift = m.health === "critical" ? -0.15 : m.health === "warning" ? -0.05 : 0.03;
-    const nextScore = clamp(
-      m.healthScore + drift + (Math.random() - 0.5) * 0.6,
-      m.id === "M-311" ? 40 : 55,
-      m.id === "M-311" ? 55 : m.id === "M-204" ? 78 : 96,
-    );
-    const tempBase =
-      m.id === "M-311" ? 91 : m.id === "M-204" ? 74 : m.id === "M-101" ? 58 : 62;
-    const vibBase =
-      m.id === "M-311" ? 7.6 : m.id === "M-204" ? 4.8 : m.id === "M-101" ? 2.1 : 2.8;
-    return {
-      ...m,
-      healthScore: Math.round(nextScore * 10) / 10,
-      health: healthFrom(nextScore),
-      temperature: Math.round(jitter(tempBase, 1.6, 30, 110) * 10) / 10,
-      vibration: Math.round(jitter(vibBase, 0.5, 0.5, 12) * 100) / 100,
-      current: Math.round(jitter(m.current, 0.6, 0, m.ratedCurrent * 1.1) * 10) / 10,
-      voltage: Math.round(jitter(m.voltage, 2, 380, 425) * 10) / 10,
-      rpm: Math.round(jitter(m.ratedRpm - 5, 8, 0, m.ratedRpm + 20)),
-      power: Math.round(jitter(m.power, 0.4, 0, m.ratedPower * 1.1) * 100) / 100,
-      powerFactor: Math.round(jitter(m.powerFactor, 0.02, 0.7, 0.98) * 100) / 100,
-      operatingHours: m.operatingHours + 1 / 3600,
-      updatedAt: Date.now(),
-    };
-  });
-  listeners.forEach((l) => l());
+async function tick() {
+  try {
+    const response = await fetch(API);
+
+    const data = await response.json();
+
+    store = store.map((m) => {
+      if (m.id !== "M-101") return m;
+
+      const health =
+        data.health >= 80
+          ? "healthy"
+          : data.health >= 60
+          ? "warning"
+          : "critical";
+
+      return {
+        ...m,
+
+        temperature: data.temperature,
+        vibration: data.vibration,
+        current: data.current,
+        voltage: data.voltage,
+        rpm: data.rpm,
+        power: data.power,
+
+        healthScore: data.health,
+        health,
+
+        updatedAt: Date.now(),
+      };
+    });
+
+    listeners.forEach((l) => l());
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
