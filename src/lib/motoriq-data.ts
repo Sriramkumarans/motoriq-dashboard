@@ -160,7 +160,7 @@ function healthFrom(score: number): Health {
 
 let store: Motor[] = seed.map((m) => ({ ...m }));
 let listeners = new Set<() => void>();
-const API = "http://65.0.107.129:8000/motor-status";
+const API = "https://providers-bennett-advertiser-korea.trycloudflare.com";
 
 async function tick() {
   try {

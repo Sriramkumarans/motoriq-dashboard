@@ -11,7 +11,7 @@ function LiveMonitoring() {
   async function fetchData() {
     try {
       const res = await fetch(
-      "http://65.0.107.129:8000/motor-status"
+      "https://providers-bennett-advertiser-korea.trycloudflare.com/motor-status"
       )
       const json = await res.json();
 
