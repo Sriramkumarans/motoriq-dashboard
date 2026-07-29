@@ -11,7 +11,7 @@ function LiveMonitoring() {
   async function fetchData() {
     try {
       const res = await fetch(
-      "http://YOUR_EC2_PUBLIC_IP:8000/motor-status"
+      "http://65.0.107.129:8000/motor-status"
       )
       const json = await res.json();
 
