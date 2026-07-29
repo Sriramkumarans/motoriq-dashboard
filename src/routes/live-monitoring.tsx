@@ -11,9 +11,8 @@ function LiveMonitoring() {
   async function fetchData() {
     try {
       const res = await fetch(
-        "https://oa8s63r1ta.execute-api.ap-south-1.amazonaws.com/prod/motor-data"
-      );
-
+      "http://YOUR_EC2_PUBLIC_IP:8000/motor-status"
+      )
       const json = await res.json();
 
       setData(json);

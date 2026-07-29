@@ -31,6 +31,10 @@ export interface Motor {
   sensorOk: boolean;
   gatewayOk: boolean;
   updatedAt: number;
+  fault?: string;
+  faultDescription?: string;
+  speedCondition?: string;
+  loadCondition?: string;
 }
 
 const seed: Motor[] = [
@@ -156,7 +160,7 @@ function healthFrom(score: number): Health {
 
 let store: Motor[] = seed.map((m) => ({ ...m }));
 let listeners = new Set<() => void>();
-const API ="https://oa8s63r1ta.execute-api.ap-south-1.amazonaws.com/prod/motor-data";
+const API = "http://65.0.107.129:8000/motor-status";
 
 async function tick() {
   try {
@@ -164,32 +168,39 @@ async function tick() {
 
     const data = await response.json();
 
-    store = store.map((m) => {
-      if (m.id !== "M-101") return m;
+    const apiMotors = data.items;
 
-      const health =
-        data.health >= 80
-          ? "healthy"
-          : data.health >= 60
-          ? "warning"
-          : "critical";
+    store = store.map((m, index) => {
+
+      if (index >= apiMotors.length) return m;
+
+      const api = apiMotors[index];
+
+      let health: Health = "healthy";
+
+      if (api.status === "Critical")
+        health = "critical";
+      else if (api.health_score < 80)
+        health = "warning";
 
       return {
         ...m,
 
-        temperature: data.temperature,
-        vibration: data.vibration,
-        current: data.current,
-        voltage: data.voltage,
-        rpm: data.rpm,
-        power: data.power,
+        temperature: api.temperature,
+        vibration: api.vibration,
+        healthScore: api.health_score,
 
-        healthScore: data.health,
+        fault: api.fault,
+        faultDescription: api.fault_description,
+        speedCondition: api.speed_condition,
+        loadCondition: api.load_condition,
+        
         health,
-
         updatedAt: Date.now(),
       };
+
     });
+
 
     listeners.forEach((l) => l());
   } catch (err) {
